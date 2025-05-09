@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .database import SessionLocal
-from .routers import users
+from .routers import users, logs
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -22,4 +22,5 @@ def read_root():
     return {"message": "FastAPI backend is working ✅"}
 
 app.include_router(users.router)
+app.include_router(logs.router)
 

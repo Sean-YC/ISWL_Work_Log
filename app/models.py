@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Float
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -12,6 +12,11 @@ class User(Base):
 class Log(Base):
     __tablename__ = 'logs'
     id = Column(Integer, primary_key=True, index=True)
-    content = Column(String)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    status = Column(String, default="pending")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    week_number = Column(Integer, nullable=False)
+    day = Column(String, nullable=False)  # e.g., Monday, Tuesday
+    date = Column(Date, nullable=True)    # Optional
+    working_hours = Column(Float, nullable=True)
+    task_description = Column(String, nullable=True)
+    status = Column(String, default="pending")  # pending / approved / rejected
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Who reviewed

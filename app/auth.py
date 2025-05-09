@@ -5,9 +5,11 @@ from . import schemas, models
 import os
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .database import get_db
 from sqlalchemy.orm import Session
+from jose import jwt, JWTError
+from .schemas import TokenData
 
 load_dotenv()
 
@@ -30,19 +32,39 @@ None):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def decode_access_token(token: str):
+# def decode_access_token(token: str):
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         email: str = payload.get("sub")
+#         if email is None:
+#             raise JWTError()
+#         return schemas.TokenData(email=email)
+#     except JWTError:
+#         return None
+
+def decode_access_token(token: str) -> TokenData | None:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # 🔥 DEBUG: Print the decoded payload
+        print("Decoded JWT payload:", payload)
+        
         email: str = payload.get("sub")
         if email is None:
-            raise JWTError()
-        return schemas.TokenData(email=email)
-    except JWTError:
+            return None
+        return TokenData(email=email)
+    except JWTError as e:
+        print("JWT decode error:", e)  # 🔥 Print any decode error too
         return None
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = HTTPBearer()
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    token = credentials.credentials  # extract the actual token string
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
