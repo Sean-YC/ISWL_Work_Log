@@ -1,14 +1,16 @@
-from pydantic import BaseModel, EmailStr # <- pydantic is a library for data validation and settings management
+from pydantic import BaseModel, EmailStr, Field # <- pydantic is a library for data validation and settings management
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 class UserCreate(BaseModel):
     email: EmailStr # <- email is a string that is a valid email address
     password: str
+    role: str = "intern"  # Default role is intern
 
 class UserOut(BaseModel):
     id: int
     email: str
+    role: str
 
     model_config = {
         "from_attributes": True # <- this is a configuration option that allows the model to be converted to a dictionary
@@ -20,6 +22,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+    role: str | None = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -49,3 +52,29 @@ class LogResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class LogUpdate(BaseModel):
+    day: Optional[str] = None
+    date: Optional[str] = None  # Changed to str to accept date strings
+    week_number: Optional[int] = None
+    working_hours: Optional[float] = None
+    task_description: Optional[str] = None
+    status: Optional[str] = None
+    reviewer_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            date: lambda v: v.isoformat() if v else None
+        }
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+
+class UserList(BaseModel):
+    users: List[UserOut]
+
+    model_config = {
+        "from_attributes": True
+    }
