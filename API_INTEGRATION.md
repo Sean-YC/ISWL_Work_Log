@@ -1,5 +1,275 @@
 # ISWL Work Log API Integration Guide
 
+## Test Endpoints (React.js Implementation)
+
+Here's a sequence of API calls using React.js patterns and hooks:
+
+1. **API Service Setup**
+```javascript
+// src/services/api.js
+const API_BASE_URL = 'http://localhost:8000';
+
+export const api = {
+  // Auth endpoints
+  register: async (userData) => {
+    const response = await fetch(`${API_BASE_URL}/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    return response.json();
+  },
+
+  login: async (credentials) => {
+    const response = await fetch(`${API_BASE_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+    return response.json();
+  },
+
+  getCurrentUser: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return response.json();
+  },
+
+  // Work log endpoints
+  createWorkLog: async (token, logData) => {
+    const response = await fetch(`${API_BASE_URL}/logs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(logData),
+    });
+    return response.json();
+  },
+
+  getWorkLogs: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/logs`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return response.json();
+  },
+
+  updateWorkLog: async (token, logId, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/logs/${logId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(updateData),
+    });
+    return response.json();
+  },
+};
+```
+
+2. **Authentication Context**
+```javascript
+// src/contexts/AuthContext.js
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { api } from '../services/api';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      if (token) {
+        try {
+          const userData = await api.getCurrentUser(token);
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to load user:', error);
+          setToken(null);
+          localStorage.removeItem('token');
+        }
+      }
+      setLoading(false);
+    };
+
+    loadUser();
+  }, [token]);
+
+  const login = async (email, password) => {
+    const { access_token } = await api.login({ email, password });
+    setToken(access_token);
+    localStorage.setItem('token', access_token);
+  };
+
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
+```
+
+3. **Example Component Usage**
+```javascript
+// src/components/WorkLogForm.js
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
+
+export const WorkLogForm = () => {
+  const { token } = useAuth();
+  const [formData, setFormData] = useState({
+    week_number: 1,
+    day: 'Monday',
+    date: new Date().toISOString().split('T')[0],
+    working_hours: 8.5,
+    task_description: '',
+    status: 'pending',
+    reviewer_id: null
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const newLog = await api.createWorkLog(token, formData);
+      console.log('Created work log:', newLog);
+      // Handle success (e.g., show notification, reset form)
+    } catch (error) {
+      console.error('Failed to create work log:', error);
+      // Handle error (e.g., show error message)
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form fields */}
+    </form>
+  );
+};
+```
+
+4. **Work Log List Component**
+```javascript
+// src/components/WorkLogList.js
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
+
+export const WorkLogList = () => {
+  const { token } = useAuth();
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const data = await api.getWorkLogs(token);
+        setLogs(data);
+      } catch (error) {
+        setError('Failed to fetch work logs');
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, [token]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      {logs.map(log => (
+        <div key={log.id}>
+          <h3>Week {log.week_number} - {log.day}</h3>
+          <p>Hours: {log.working_hours}</p>
+          <p>Task: {log.task_description}</p>
+          <p>Status: {log.status}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+5. **App Setup**
+```javascript
+// src/App.js
+import React from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import { WorkLogForm } from './components/WorkLogForm';
+import { WorkLogList } from './components/WorkLogList';
+
+function App() {
+  return (
+    <AuthProvider>
+      <div className="App">
+        <h1>Work Log System</h1>
+        <WorkLogForm />
+        <WorkLogList />
+      </div>
+    </AuthProvider>
+  );
+}
+
+export default App;
+```
+
+This React.js implementation provides:
+- Centralized API service
+- Authentication context for managing user state
+- Reusable components for work log management
+- Proper error handling and loading states
+- Token management with localStorage
+- Type-safe API calls
+
+The code follows React best practices:
+- Uses hooks for state management
+- Implements context for global state
+- Separates concerns (API, components, context)
+- Handles loading and error states
+- Provides reusable components
+
+Would you like me to add any additional React.js specific features or explain any part in more detail?
+
+## Landing Page
+
+### Health Check
+- **Endpoint**: `/`
+- **Method**: GET
+- **Description**: Simple health check endpoint to verify if the backend is running
+- **Success Response** (200 OK):
+  ```json
+  {
+    "message": "FastAPI backend is working ✅"
+  }
+  ```
+
 ## Authentication Endpoints
 
 ### 1. Login
