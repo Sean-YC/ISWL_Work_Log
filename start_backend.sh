@@ -21,9 +21,23 @@ if [ ! -f "app/init_db.py" ]; then
     exit 1
 fi
 
-# run database initialization script
+# run database initialization script with explicit logging
 echo "Running database initialization script..."
-python -m app.init_db
+PYTHONPATH=. python -c "
+import logging
+import sys
+from app.init_db import init_db
+
+# Configure logging to stdout
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+
+# Run initialization
+init_db()
+"
 
 # check exit status of initialization script
 if [ $? -ne 0 ]; then
@@ -83,4 +97,4 @@ except Exception as e:
 "
 
 echo "🚀 Starting FastAPI server with uvicorn..."
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
+uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level debug
