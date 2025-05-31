@@ -4,7 +4,7 @@ import sys
 from dotenv import load_dotenv
 import logging
 
-# 设置日志
+# set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,10 @@ def init_db():
             logger.error("DATABASE_URL environment variable is not set")
             sys.exit(1)
 
-        logger.info("Connecting to database...")
+        # print database connection information (hide password)
+        masked_url = DATABASE_URL.replace(DATABASE_URL.split('@')[0], '***')
+        logger.info(f"Connecting to database: {masked_url}")
+
         engine = create_engine(DATABASE_URL)
         
         # create users table (if not exists)
@@ -66,6 +69,19 @@ def init_db():
                     logger.info("Username column added successfully!")
                 else:
                     logger.info("Username column already exists.")
+            
+            # print current table structure
+            logger.info("Checking current table structure...")
+            result = conn.execute(text("""
+                SELECT column_name, data_type, is_nullable 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' 
+                ORDER BY ordinal_position;
+            """))
+            columns = [(row[0], row[1], row[2]) for row in result]
+            logger.info("Current users table structure:")
+            for col in columns:
+                logger.info(f"  - {col[0]}: {col[1]} (nullable: {col[2]})")
             
             logger.info("Database initialization completed successfully!")
             
