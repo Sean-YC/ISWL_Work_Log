@@ -24,78 +24,58 @@ def init_db():
 
         engine = create_engine(DATABASE_URL)
         
-        # create users table (if not exists)
-        with engine.begin() as conn:  # use begin() to handle transactions automatically
-            # check if table exists
-            logger.info("Checking if users table exists...")
-            result = conn.execute(text("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_name = 'users'
+        with engine.begin() as conn:
+            # Drop existing tables if they exist
+            logger.info("Dropping existing tables...")
+            conn.execute(text("""
+                DROP TABLE IF EXISTS logs CASCADE;
+                DROP TABLE IF EXISTS users CASCADE;
+            """))
+            
+            # Create users table
+            logger.info("Creating users table...")
+            conn.execute(text("""
+                CREATE TABLE users (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR UNIQUE NOT NULL,
+                    username VARCHAR UNIQUE,
+                    hashed_password VARCHAR NOT NULL,
+                    role VARCHAR NOT NULL
                 );
             """))
-            table_exists = result.scalar()
             
-            if not table_exists:
-                logger.info("Creating users table...")
-                conn.execute(text("""
-                    CREATE TABLE users (
-                        id SERIAL PRIMARY KEY,
-                        email VARCHAR UNIQUE NOT NULL,
-                        username VARCHAR UNIQUE,
-                        hashed_password VARCHAR NOT NULL,
-                        role VARCHAR NOT NULL
-                    );
-                """))
-                logger.info("Users table created successfully!")
-            else:
-                logger.info("Users table already exists.")
-                
-                # Directly try to add the username column
-                logger.info("Attempting to add username column...")
-                try:
-                    # First, check if the column exists
-                    result = conn.execute(text("""
-                        SELECT column_name 
-                        FROM information_schema.columns 
-                        WHERE table_name = 'users' 
-                        AND column_name = 'username';
-                    """))
-                    if not result.fetchone():
-                        # Column doesn't exist, add it
-                        conn.execute(text("""
-                            ALTER TABLE users 
-                            ADD COLUMN username VARCHAR UNIQUE;
-                        """))
-                        logger.info("Username column added successfully!")
-                    else:
-                        logger.info("Username column already exists.")
-                except Exception as e:
-                    logger.error(f"Error adding username column: {str(e)}")
-                    # Try alternative approach
-                    try:
-                        logger.info("Trying alternative approach to add username column...")
-                        conn.execute(text("""
-                            ALTER TABLE users 
-                            ADD COLUMN IF NOT EXISTS username VARCHAR UNIQUE;
-                        """))
-                        logger.info("Username column added using alternative approach!")
-                    except Exception as e2:
-                        logger.error(f"Alternative approach also failed: {str(e2)}")
-                        raise
+            # Create logs table
+            logger.info("Creating logs table...")
+            conn.execute(text("""
+                CREATE TABLE logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    week_number INTEGER NOT NULL,
+                    day VARCHAR NOT NULL,
+                    date DATE,
+                    working_hours FLOAT,
+                    task_description VARCHAR,
+                    status VARCHAR DEFAULT 'pending',
+                    reviewer_id INTEGER REFERENCES users(id)
+                );
+            """))
             
             # print current table structure
             logger.info("Checking current table structure...")
             result = conn.execute(text("""
-                SELECT column_name, data_type, is_nullable 
+                SELECT table_name, column_name, data_type, is_nullable 
                 FROM information_schema.columns 
-                WHERE table_name = 'users' 
-                ORDER BY ordinal_position;
+                WHERE table_name IN ('users', 'logs')
+                ORDER BY table_name, ordinal_position;
             """))
-            columns = [(row[0], row[1], row[2]) for row in result]
-            logger.info("Current users table structure:")
-            for col in columns:
-                logger.info(f"  - {col[0]}: {col[1]} (nullable: {col[2]})")
+            columns = [(row[0], row[1], row[2], row[3]) for row in result]
+            logger.info("Current database structure:")
+            current_table = None
+            for table, col, dtype, nullable in columns:
+                if table != current_table:
+                    current_table = table
+                    logger.info(f"\n{table} table:")
+                logger.info(f"  - {col}: {dtype} (nullable: {nullable})")
             
             logger.info("Database initialization completed successfully!")
             
