@@ -50,10 +50,11 @@ def decode_access_token(token: str) -> TokenData | None:
         print("Decoded JWT payload:", payload)
         
         email: str = payload.get("sub")
+        username: str = payload.get("username")
         role: str = payload.get("role")
         if email is None:
             return None
-        return TokenData(email=email, role=role)
+        return TokenData(email=email, username=username, role=role)
     except JWTError as e:
         print("JWT decode error:", e)  # 🔥 Print any decode error too
         return None

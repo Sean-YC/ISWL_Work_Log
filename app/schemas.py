@@ -4,12 +4,14 @@ from typing import Optional, List
 
 class UserCreate(BaseModel):
     email: EmailStr # <- email is a string that is a valid email address
+    username: str
     password: str
     role: str = "intern"  # Default role is intern
 
 class UserOut(BaseModel):
     id: int
     email: str
+    username: str
     role: str
 
     model_config = {
@@ -22,6 +24,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+    username: str | None = None
     role: str | None = None
 
 class UserLogin(BaseModel):
