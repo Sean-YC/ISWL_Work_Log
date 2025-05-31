@@ -55,6 +55,41 @@ def init_db():
                 else:
                     logger.info("Users table already exists.")
                     
+                    # Check if username column exists
+                    logger.info("Checking if username column exists...")
+                    result = conn.execute(text("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.columns 
+                            WHERE table_name = 'users' 
+                            AND column_name = 'username'
+                        );
+                    """))
+                    username_exists = result.scalar()
+                    logger.info(f"Username column exists: {username_exists}")
+                    
+                    if not username_exists:
+                        logger.info("Adding username column...")
+                        try:
+                            conn.execute(text("""
+                                ALTER TABLE users 
+                                ADD COLUMN username VARCHAR UNIQUE;
+                            """))
+                            logger.info("Username column added successfully!")
+                        except Exception as e:
+                            logger.error(f"Error adding username column: {str(e)}")
+                            logger.error(f"Traceback: {traceback.format_exc()}")
+                            # Try without UNIQUE constraint if first attempt fails
+                            try:
+                                conn.execute(text("""
+                                    ALTER TABLE users 
+                                    ADD COLUMN username VARCHAR;
+                                """))
+                                logger.info("Username column added without UNIQUE constraint")
+                            except Exception as e2:
+                                logger.error(f"Failed to add username column: {str(e2)}")
+                                logger.error(f"Traceback: {traceback.format_exc()}")
+                                raise
+                    
                     # Check if logs table exists
                     result = conn.execute(text("""
                         SELECT EXISTS (
@@ -84,54 +119,6 @@ def init_db():
                         logger.info("Logs table created successfully!")
                     else:
                         logger.info("Logs table already exists.")
-                    
-                    # Safely add missing columns to users table
-                    logger.info("Checking for missing columns in users table...")
-                    existing_columns = conn.execute(text("""
-                        SELECT column_name 
-                        FROM information_schema.columns 
-                        WHERE table_name = 'users';
-                    """))
-                    existing_columns = [row[0] for row in existing_columns]
-                    logger.info(f"Existing columns: {existing_columns}")
-                    
-                    # Define required columns and their definitions
-                    required_columns = {
-                        'id': 'SERIAL PRIMARY KEY',
-                        'email': 'VARCHAR UNIQUE NOT NULL',
-                        'username': 'VARCHAR UNIQUE',
-                        'hashed_password': 'VARCHAR NOT NULL',
-                        'role': 'VARCHAR NOT NULL'
-                    }
-                    
-                    # Add missing columns
-                    for column, definition in required_columns.items():
-                        if column not in existing_columns:
-                            logger.info(f"Adding missing column: {column}")
-                            try:
-                                # Extract the data type and constraints from the definition
-                                data_type = definition.split()[0]
-                                constraints = ' '.join(definition.split()[1:])
-                                
-                                # Add the column with appropriate constraints
-                                conn.execute(text(f"""
-                                    ALTER TABLE users 
-                                    ADD COLUMN {column} {data_type} {constraints};
-                                """))
-                                logger.info(f"Added column {column} successfully")
-                            except Exception as e:
-                                logger.error(f"Error adding column {column}: {str(e)}")
-                                logger.error(f"Traceback: {traceback.format_exc()}")
-                                # Try without constraints if the first attempt fails
-                                try:
-                                    conn.execute(text(f"""
-                                        ALTER TABLE users 
-                                        ADD COLUMN {column} {data_type};
-                                    """))
-                                    logger.info(f"Added column {column} without constraints")
-                                except Exception as e2:
-                                    logger.error(f"Failed to add column {column} even without constraints: {str(e2)}")
-                                    logger.error(f"Traceback: {traceback.format_exc()}")
                 
                 # print current table structure
                 logger.info("Checking current table structure...")
