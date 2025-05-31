@@ -51,24 +51,26 @@ def init_db():
             else:
                 logger.info("Users table already exists.")
                 
-                # check if username column exists
-                logger.info("Checking if username column exists...")
-                result = conn.execute(text("""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'users' AND column_name = 'username'
-                    );
-                """))
-                column_exists = result.scalar()
-                
-                if not column_exists:
-                    logger.info("Adding username column...")
+                # Force add username column if it doesn't exist
+                logger.info("Ensuring username column exists...")
+                try:
                     conn.execute(text("""
-                        ALTER TABLE users ADD COLUMN username VARCHAR UNIQUE;
+                        DO $$ 
+                        BEGIN 
+                            IF NOT EXISTS (
+                                SELECT 1 
+                                FROM information_schema.columns 
+                                WHERE table_name = 'users' 
+                                AND column_name = 'username'
+                            ) THEN
+                                ALTER TABLE users ADD COLUMN username VARCHAR UNIQUE;
+                            END IF;
+                        END $$;
                     """))
-                    logger.info("Username column added successfully!")
-                else:
-                    logger.info("Username column already exists.")
+                    logger.info("Username column check completed")
+                except Exception as e:
+                    logger.error(f"Error ensuring username column: {str(e)}")
+                    raise
             
             # print current table structure
             logger.info("Checking current table structure...")
