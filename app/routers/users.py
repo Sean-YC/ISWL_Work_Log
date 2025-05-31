@@ -21,12 +21,20 @@ def is_admin(current_user: models.User = Depends(auth.get_current_user)):
 
 @router.post("/register", response_model=schemas.UserOut)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # check if email already exists
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # check if username already exists
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
     hashed_pw = auth.get_password_hash(user.password)
     new_user = models.User(
         email=user.email,
+        username=user.username,
         hashed_password=hashed_pw,
         role=user.role
     )
