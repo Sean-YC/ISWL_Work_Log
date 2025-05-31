@@ -51,26 +51,38 @@ def init_db():
             else:
                 logger.info("Users table already exists.")
                 
-                # Force add username column if it doesn't exist
-                logger.info("Ensuring username column exists...")
+                # Directly try to add the username column
+                logger.info("Attempting to add username column...")
                 try:
-                    conn.execute(text("""
-                        DO $$ 
-                        BEGIN 
-                            IF NOT EXISTS (
-                                SELECT 1 
-                                FROM information_schema.columns 
-                                WHERE table_name = 'users' 
-                                AND column_name = 'username'
-                            ) THEN
-                                ALTER TABLE users ADD COLUMN username VARCHAR UNIQUE;
-                            END IF;
-                        END $$;
+                    # First, check if the column exists
+                    result = conn.execute(text("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'users' 
+                        AND column_name = 'username';
                     """))
-                    logger.info("Username column check completed")
+                    if not result.fetchone():
+                        # Column doesn't exist, add it
+                        conn.execute(text("""
+                            ALTER TABLE users 
+                            ADD COLUMN username VARCHAR UNIQUE;
+                        """))
+                        logger.info("Username column added successfully!")
+                    else:
+                        logger.info("Username column already exists.")
                 except Exception as e:
-                    logger.error(f"Error ensuring username column: {str(e)}")
-                    raise
+                    logger.error(f"Error adding username column: {str(e)}")
+                    # Try alternative approach
+                    try:
+                        logger.info("Trying alternative approach to add username column...")
+                        conn.execute(text("""
+                            ALTER TABLE users 
+                            ADD COLUMN IF NOT EXISTS username VARCHAR UNIQUE;
+                        """))
+                        logger.info("Username column added using alternative approach!")
+                    except Exception as e2:
+                        logger.error(f"Alternative approach also failed: {str(e2)}")
+                        raise
             
             # print current table structure
             logger.info("Checking current table structure...")
