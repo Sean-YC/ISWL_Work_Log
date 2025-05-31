@@ -3,11 +3,21 @@
 echo "🔄 Starting database initialization..."
 echo "Current directory: $(pwd)"
 echo "Python version: $(python --version)"
+echo "Python path: $(which python)"
+echo "Current user: $(whoami)"
 
 # check environment variables
 echo "Checking environment variables..."
 if [ -z "$DATABASE_URL" ]; then
     echo "Error: DATABASE_URL is not set"
+    exit 1
+fi
+
+# check if init_db.py exists
+echo "Checking if init_db.py exists..."
+if [ ! -f "app/init_db.py" ]; then
+    echo "Error: app/init_db.py not found"
+    ls -la app/
     exit 1
 fi
 
