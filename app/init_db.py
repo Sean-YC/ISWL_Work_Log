@@ -29,6 +29,11 @@ def init_db():
         engine = create_engine(DATABASE_URL, echo=True)  # Enable SQL logging
         
         try:
+            # Drop all tables first
+            logger.info("Dropping all existing tables...")
+            Base.metadata.drop_all(bind=engine)
+            logger.info("All tables dropped successfully!")
+            
             # Create all tables
             logger.info("Creating all tables...")
             Base.metadata.create_all(bind=engine)
