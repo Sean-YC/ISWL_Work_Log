@@ -8,6 +8,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(String)  # e.g., intern, supervisor, admin
+    username = Column(String, unique=True, index=True)
 
 class Log(Base):
     __tablename__ = 'logs'

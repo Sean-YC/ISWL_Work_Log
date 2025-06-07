@@ -3,12 +3,14 @@ from datetime import date
 from typing import Optional, List
 
 class UserCreate(BaseModel):
+    username: str  # Username is required for registration
     email: EmailStr # <- email is a string that is a valid email address
     password: str
     role: str = "intern"  # Default role is intern
 
 class UserOut(BaseModel):
     id: int
+    username: str  # Include username in user output
     email: str
     role: str
 
@@ -69,6 +71,7 @@ class LogUpdate(BaseModel):
         }
 
 class UserUpdate(BaseModel):
+    username: Optional[str] = None  # Allow updating username
     email: Optional[EmailStr] = None
     role: Optional[str] = None
 

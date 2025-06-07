@@ -24,11 +24,16 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    # Check if username already exists
+    db_username = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
     hashed_pw = auth.get_password_hash(user.password)
     new_user = models.User(
         email=user.email,
         hashed_password=hashed_pw,
-        role=user.role
+        role=user.role,
+        username=user.username  # Store username
     )
     db.add(new_user)
     db.commit()
@@ -54,12 +59,17 @@ def update_user(
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+    # Allow updating username
+    if user_update.username:
+        # Check if new username is already taken by another user
+        existing_user = db.query(models.User).filter(models.User.username == user_update.username, models.User.id != user_id).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        db_user.username = user_update.username
     if user_update.email:
         db_user.email = user_update.email
     if user_update.role:
         db_user.role = user_update.role
-    
     db.commit()
     db.refresh(db_user)
     return db_user
@@ -89,4 +99,5 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=schemas.UserOut)
 def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
+    # Return user info including username
     return current_user
