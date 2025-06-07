@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field # <- pydantic is a library for data validation and settings management
-from datetime import date
+from datetime import date, time
 from typing import Optional, List
 
 class UserCreate(BaseModel):
@@ -33,22 +33,20 @@ class UserLogin(BaseModel):
 #=========== Log Schemas ============
 
 class LogCreate(BaseModel):
-    day: str
-    date: date  # <- should expect a `date`, not `None`
-    week_number: int
-    working_hours: float
-    task_description: str
+    date: date  # Required
+    start_time: time  # Required ("in")
+    working_hours: float  # Required ("hours")
+    task_description: str  # Required
     status: str
     reviewer_id: Optional[int] = None
 
 class LogResponse(BaseModel):
     id: int
     user_id: int
-    week_number: int
-    day: str
-    date: Optional[date]
-    working_hours: Optional[float]
-    task_description: Optional[str]
+    date: date  # Required
+    start_time: time  # Required
+    working_hours: float  # Required
+    task_description: str  # Required
     status: str
     reviewer_id: Optional[int] = None
 
@@ -56,9 +54,8 @@ class LogResponse(BaseModel):
         from_attributes = True
 
 class LogUpdate(BaseModel):
-    day: Optional[str] = None
-    date: Optional[str] = None  # Changed to str to accept date strings
-    week_number: Optional[int] = None
+    date: Optional[date] = None
+    start_time: Optional[time] = None
     working_hours: Optional[float] = None
     task_description: Optional[str] = None
     status: Optional[str] = None

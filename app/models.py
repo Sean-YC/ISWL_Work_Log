@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Float
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Float, Time
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -14,10 +14,9 @@ class Log(Base):
     __tablename__ = 'logs'
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    week_number = Column(Integer, nullable=False)
-    day = Column(String, nullable=False)  # e.g., Monday, Tuesday
-    date = Column(Date, nullable=True)    # Optional
-    working_hours = Column(Float, nullable=True)
-    task_description = Column(String, nullable=True)
-    status = Column(String, default="pending")  # pending / approved / rejected
-    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Who reviewed
+    date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=False)  # Required start time ("in")
+    working_hours = Column(Float, nullable=False)  # Required hours
+    task_description = Column(String, nullable=False)  # Required task description
+    status = Column(String, default="pending")  # Keep for review logic, not required in form
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Keep for review logic, not required in form

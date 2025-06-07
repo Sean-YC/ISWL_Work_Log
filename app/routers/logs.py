@@ -16,13 +16,11 @@ router = APIRouter(
 def create_log(log: schemas.LogCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_log = models.Log(
         user_id=current_user.id,
-        week_number=log.week_number,
-        day=log.day,
         date=log.date,
+        start_time=log.start_time,  # Required start time ("in")
         working_hours=log.working_hours,
-        task_description=log.task_description,
-        status=log.status,  # 🔥 pass in the status
-        reviewer_id=log.reviewer_id  # 🔥 pass in the reviewer_id
+        task_description=log.task_description
+        # status and reviewer_id are not required in the form, keep default
     )
     db.add(db_log)
     db.commit()
