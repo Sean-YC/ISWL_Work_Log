@@ -36,7 +36,7 @@ class LogCreate(BaseModel):
     date: date  # Required
     working_hours: float  # Required ("hours")
     task_description: str  # Required
-    status: str
+    status: str = "pending"
     reviewer_id: Optional[int] = None
 
 class LogResponse(BaseModel):
