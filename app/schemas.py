@@ -43,7 +43,6 @@ class LogResponse(BaseModel):
     id: int
     user_id: int
     date: date  # Required
-    start_time: time  # Required
     working_hours: float  # Required
     task_description: str  # Required
     status: str
@@ -54,7 +53,6 @@ class LogResponse(BaseModel):
 
 class LogUpdate(BaseModel):
     date: Optional[date] = None
-    start_time: Optional[time] = None
     working_hours: Optional[float] = None
     task_description: Optional[str] = None
     status: Optional[str] = None
