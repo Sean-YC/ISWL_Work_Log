@@ -14,13 +14,11 @@ router = APIRouter(
 # add a new log
 @router.post("/", response_model=schemas.LogResponse)
 def create_log(log: schemas.LogCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    week_number = log.date.isocalendar()[1]
     db_log = models.Log(
         user_id=current_user.id,
         date=log.date, # Required start time ("in")
         working_hours=log.working_hours,
-        task_description=log.task_description,
-        week_number=week_number
+        task_description=log.task_description
         # status and reviewer_id are not required in the form, keep default
     )
     db.add(db_log)
