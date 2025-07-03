@@ -15,7 +15,7 @@ class Log(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     date = Column(Date, nullable=False)
-    start_time = Column(Time, nullable=False)  # Required start time ("in")
+    # start_time: time  # Remove or comment out this line
     working_hours = Column(Float, nullable=False)  # Required hours
     task_description = Column(String, nullable=False)  # Required task description
     status = Column(String, default="pending")  # Keep for review logic, not required in form

@@ -34,7 +34,6 @@ class UserLogin(BaseModel):
 
 class LogCreate(BaseModel):
     date: date  # Required
-    start_time: time  # Required ("in")
     working_hours: float  # Required ("hours")
     task_description: str  # Required
     status: str
