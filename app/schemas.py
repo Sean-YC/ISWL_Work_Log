@@ -34,7 +34,8 @@ class UserLogin(BaseModel):
 
 class LogCreate(BaseModel):
     date: date  # Required
-    working_hours: float  # Required ("hours")
+    start_time: time  # Required (e.g., "9:00")
+    end_time: time  # Required (e.g., "13:00")
     task_description: str  # Required
     status: str = "pending"
     reviewer_id: Optional[int] = None
@@ -43,7 +44,8 @@ class LogResponse(BaseModel):
     id: int
     user_id: int
     date: date  # Required
-    working_hours: float  # Required
+    start_time: time  # Required
+    end_time: time  # Required
     task_description: str  # Required
     status: str
     reviewer_id: Optional[int] = None
@@ -53,7 +55,8 @@ class LogResponse(BaseModel):
 
 class LogUpdate(BaseModel):
     date: Optional[date] = None
-    working_hours: Optional[float] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
     task_description: Optional[str] = None
     status: Optional[str] = None
     reviewer_id: Optional[int] = None
