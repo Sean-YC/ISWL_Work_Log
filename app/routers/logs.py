@@ -16,8 +16,9 @@ router = APIRouter(
 def create_log(log: schemas.LogCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_log = models.Log(
         user_id=current_user.id,
-        date=log.date, # Required start time ("in")
-        working_hours=log.working_hours,
+        date=log.date,
+        start_time=log.start_time,
+        end_time=log.end_time,
         task_description=log.task_description
         # status and reviewer_id are not required in the form, keep default
     )
