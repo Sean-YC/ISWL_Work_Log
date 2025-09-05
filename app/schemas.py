@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, Field # <- pydantic is a library for d
 from datetime import date, time
 from typing import Optional, List
 
+# ============ User Schemas ============
 class UserCreate(BaseModel):
     username: str  # Username is required for registration
     email: EmailStr # <- email is a string that is a valid email address
