@@ -20,7 +20,7 @@ def create_log(log: schemas.LogCreate, db: Session = Depends(get_db), current_us
         start_time=log.start_time,
         end_time=log.end_time,
         task_description=log.task_description
-        # status 使用數據庫默認值 "pending"
+        # status and reviewer_id are not required in the form, keep default
     )
     db.add(db_log)
     db.commit()
@@ -74,7 +74,7 @@ def update_log(
         }
     else:
         # For owners, update all other fields
-        update_data = log_update.model_dump(exclude_unset=True)
+        update_data = log_update.dict(exclude_unset=True)
         # Convert date string to date object if present
         if update_data.get('date'):
             update_data['date'] = datetime.strptime(update_data['date'], '%Y-%m-%d').date()
@@ -87,3 +87,34 @@ def update_log(
     db.commit()
     db.refresh(db_log)
     return db_log
+
+# delete a log
+@router.delete("/{log_id}", response_model=dict)
+def delete_log(
+    log_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Get the log
+    db_log = db.query(models.Log).filter(models.Log.id == log_id).first()
+    if not db_log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Log not found"
+        )
+
+    # Check permissions
+    is_owner = db_log.user_id == current_user.id
+    is_supervisor = current_user.role in ["supervisor", "admin"]
+
+    if not (is_owner or is_supervisor):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this log"
+        )
+
+    # Delete the log
+    db.delete(db_log)
+    db.commit()
+    
+    return {"message": "Log deleted successfully", "log_id": log_id}
