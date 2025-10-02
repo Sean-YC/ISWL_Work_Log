@@ -20,7 +20,7 @@ def create_log(log: schemas.LogCreate, db: Session = Depends(get_db), current_us
         start_time=log.start_time,
         end_time=log.end_time,
         task_description=log.task_description
-        # status and reviewer_id are not required in the form, keep default
+        # status 使用數據庫默認值 "pending"
     )
     db.add(db_log)
     db.commit()
@@ -74,7 +74,7 @@ def update_log(
         }
     else:
         # For owners, update all other fields
-        update_data = log_update.dict(exclude_unset=True)
+        update_data = log_update.model_dump(exclude_unset=True)
         # Convert date string to date object if present
         if update_data.get('date'):
             update_data['date'] = datetime.strptime(update_data['date'], '%Y-%m-%d').date()
