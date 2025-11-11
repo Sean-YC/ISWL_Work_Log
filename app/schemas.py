@@ -89,3 +89,64 @@ class UserList(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+# ============ Leave Status Enum ============
+class LeaveStatus(str, Enum):
+    """Enum for leave status values"""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+# ============ Leave Type Enum ============
+class LeaveType(str, Enum):
+    """Enum for leave type values"""
+    ANNUAL_LEAVE = "annual_leave"
+    SICK_LEAVE = "sick_leave"
+    PERSONAL_LEAVE = "personal_leave"
+
+# ============ Leave Schemas ============
+
+class LeaveCreate(BaseModel):
+    leave_type: LeaveType
+    start_date: date
+    end_date: date
+    reason: str
+    contact: Optional[str] = None
+
+class LeaveResponse(BaseModel):
+    id: int
+    user_id: int
+    leave_type: str
+    start_date: date
+    end_date: date
+    reason: str
+    contact: Optional[str] = None
+    status: str
+    reviewer_id: Optional[int] = None
+    created_at: date
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class LeaveUpdate(BaseModel):
+    leave_type: Optional[LeaveType] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    reason: Optional[str] = None
+    contact: Optional[str] = None
+    status: Optional[LeaveStatus] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class LeaveBalanceResponse(BaseModel):
+    user_id: int
+    annual_leave: int
+    sick_leave: int
+    personal_leave: int
+
+    model_config = {
+        "from_attributes": True
+    }

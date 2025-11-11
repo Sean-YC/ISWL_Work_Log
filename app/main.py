@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .database import SessionLocal
-from .routers import users, logs
+from .routers import users, logs, leaves
 from fastapi.middleware.cors import CORSMiddleware
 from app import models
 from app.database import engine
@@ -26,6 +26,7 @@ def read_root():
 
 app.include_router(users.router)
 app.include_router(logs.router)
+app.include_router(leaves.router)
 
 # === TEMPORARY: Create all tables if they do not exist ===
 models.Base.metadata.create_all(bind=engine)

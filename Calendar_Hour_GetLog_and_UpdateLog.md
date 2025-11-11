@@ -110,6 +110,51 @@ const updateLog = async (logId, updateData) => {
 }
 ```
 
+### 3. Delete Log
+
+**Endpoint:** `DELETE /logs/{log_id}`
+
+**Description:** Delete a specific work log
+
+**Request:**
+```javascript
+const deleteLog = async (logId) => {
+  try {
+    const response = await fetch(`/logs/${logId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Log deleted successfully:', result);
+      return result;
+    } else {
+      const errorData = await response.json();
+      console.error('Delete failed:', errorData);
+    }
+  } catch (error) {
+    console.error('Error deleting log:', error);
+  }
+};
+```
+
+**Request Format:**
+```json
+{}
+```
+
+**Response Format:**
+```json
+{
+  "message": "Log deleted successfully",
+  "log_id": 123
+}
+```
+
 ## 🔄 Complete Usage Flow
 
 ### Step 1: Get Log List
@@ -136,6 +181,13 @@ const updateData = {
 const updatedLog = await updateLog(logId, updateData);
 ```
 
+### Step 4: Delete Log
+Example:
+```javascript
+const deletedResult = await deleteLog(logId);
+console.log(deletedResult.message); // "Log deleted successfully"
+```
+
 ## 📝 Field Descriptions
 
 ### Log Fields
@@ -160,8 +212,9 @@ const updatedLog = await updateLog(logId, updateData);
 
 1. **Authentication Required**: All requests need a valid Authorization token
 2. **Permission Restrictions**:
-   - Regular users can only update their own logs
+   - Regular users can only update/delete their own logs
    - Regular users cannot modify status and reviewer_id
+   - Admins can update/delete any logs
 3. **Data Format**:
    - Date format: YYYY-MM-DD
    - Time format: HH:MM:SS
